@@ -1,4 +1,4 @@
-use crate::value::{Value, ValueArray};
+use crate::{opcode::OpCode, value::{Value, ValueArray}};
 
 pub struct Chunk<'chunk> {
     pub name: &'chunk str,
@@ -22,11 +22,15 @@ impl<'chunk> Chunk<'chunk> {
         self.lines.push(line);
     }
 
-    pub fn add_const(&mut self, value: Value) -> usize {
+    pub fn write_opcode(&mut self, opcode: OpCode, line: usize) {
+        self.write(opcode as u8, line);
+    }
+
+    pub fn add_const(&mut self, value: Value) -> u8 {
         self.constants.write(value)
     }
 
-    pub fn get_const(&self, index: usize) -> Value {
-        self.constants.get(index)
+    pub fn get_const(&self, index: u8) -> Value {
+        self.constants.get(index as usize)
     }
 }

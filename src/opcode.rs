@@ -2,17 +2,17 @@
 #[repr(u8)]
 pub enum OpCode {
     Constant,
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+    Modulo,
+    Negate,
     Return,
 }
 
-impl TryFrom<u8> for OpCode {
-    type Error = String;
-
-    fn try_from(value: u8) -> Result<Self, Self::Error> {
-        match value {
-            0 => Ok(Self::Constant),
-            1 => Ok(Self::Return),
-            _ => Err(format!("Invalid opcode: {}", value)),
-        }
+impl From<u8> for OpCode {
+    fn from(value: u8) -> Self {
+        unsafe { std::mem::transmute(value) }
     }
 }

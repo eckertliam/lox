@@ -22,14 +22,14 @@ macro_rules! constant_instruction {
     ($name:tt, $offset:expr, $chunk:expr) => {
         {
             let const_idx: u8 = $chunk.code[$offset + 1];
-            let value = $chunk.get_const(const_idx as usize);
+            let value: Value = $chunk.get_const(const_idx);
             println!("{}    {} {}", stringify!($name), const_idx, value);
             $offset + 2
         }
     };
 }
 
-fn disassemble_instruction(chunk: &Chunk, offset: usize) -> usize {
+pub fn disassemble_instruction(chunk: &Chunk, offset: usize) -> usize {
     print!("{:04} ", offset);
 
     if offset > 0 && chunk.lines[offset] == chunk.lines[offset - 1] {
@@ -50,5 +50,11 @@ fn disassemble_instruction(chunk: &Chunk, offset: usize) -> usize {
     match instr {
         OpCode::Constant => constant_instruction!(CONSTANT, offset, chunk),
         OpCode::Return => simple_instruction!(RETURN, offset),
+        OpCode::Negate => simple_instruction!(NEGATE, offset),
+        OpCode::Add => simple_instruction!(ADD, offset),
+        OpCode::Subtract => simple_instruction!(SUBTRACT, offset),
+        OpCode::Multiply => simple_instruction!(MULTIPLY, offset),
+        OpCode::Divide => simple_instruction!(DIVIDE, offset),
+        OpCode::Modulo => simple_instruction!(MODULO, offset),
     }
 }

@@ -9,9 +9,9 @@ impl ValueArray {
         Self { values: Vec::new() }
     }
 
-    pub fn write(&mut self, value: Value) -> usize {
+    pub fn write(&mut self, value: Value) -> u8 {
         self.values.push(value);
-        self.values.len() - 1
+        (self.values.len() - 1) as u8
     }
 
     pub fn get(&self, index: usize) -> Value {
