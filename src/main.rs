@@ -1,6 +1,6 @@
-use chunk::Chunk;
-use opcode::OpCode;
-use vm::VM;
+use std::env;
+
+use vm::{InterpretResult, VM};
 
 mod opcode;
 mod chunk;
@@ -8,27 +8,22 @@ mod chunk;
 mod debug;
 mod value;
 mod vm;
+mod compiler;
+mod scanner;
+
+const VERSION: &str = "0.0.1";
 
 fn main() {
-    let mut chunk = Chunk::new("test");
-    let mut const_idx = chunk.add_const(1.2);
-    chunk.write_opcode(OpCode::Constant, 123);
-    chunk.write(const_idx, 123);
-    const_idx = chunk.add_const(3.4);
-    chunk.write_opcode(OpCode::Constant, 123);
-    chunk.write(const_idx, 123);
-    chunk.write_opcode(OpCode::Add, 123);
-    const_idx = chunk.add_const(5.6);
-    chunk.write_opcode(OpCode::Constant, 123);
-    chunk.write(const_idx, 123);
-    chunk.write_opcode(OpCode::Divide, 123);
-    chunk.write_opcode(OpCode::Negate, 123);
-    chunk.write_opcode(OpCode::Return, 123);
+    let args: Vec<String> = env::args().collect();
 
-    let mut vm = VM::new(&chunk);
-    vm.interpret();
-    #[cfg(feature = "debug")]
-    {
-        debug::disassemble_chunk(&chunk);
+    if args.len() == 1 {
+        // TODO: Implement repl
+        unimplemented!("Implement repl");
+    } else if args.len() == 2 {
+        // TODO: Implement run file
+        unimplemented!("Implement run file");
+    } else {
+        eprintln!("Usage: rlox [path]");
+        std::process::exit(64);
     }
 }

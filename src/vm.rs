@@ -1,4 +1,7 @@
+use std::io::{Read, Write};
+
 use crate::chunk::Chunk;
+use crate::compiler::compile;
 use crate::opcode::OpCode;
 use crate::value::Value;
 
@@ -40,17 +43,18 @@ impl Stack {
 }
 
 pub struct VM<'a> {
-    chunk: &'a Chunk<'a>,
+    chunk: Chunk<'a>,
     ip: usize,
     stack: Stack,
 }
 
 impl<'a> VM<'a> {
-    pub fn new(chunk: &'a Chunk<'a>) -> Self {
+    pub fn new(chunk: Chunk<'a>) -> Self {
         Self { chunk, ip: 0, stack: Stack::new() }
     }
 
-    pub fn interpret(&mut self) -> InterpretResult {
+    pub fn interpret(&mut self, source: &'a str) -> InterpretResult {
+        self.chunk = compile(source);
         self.ip = 0;
         return self.run();
     }
@@ -92,6 +96,34 @@ impl<'a> VM<'a> {
                 }
             }
         }
+        return InterpretResult::Ok;
+    }
+
+    pub fn repl(&mut self) -> InterpretResult {
+        let mut line = String::new();
+        
+        loop {
+            print!("> ");
+            std::io::stdout().flush().unwrap();
+            line.clear();
+            
+            match std::io::stdin().read_line(&mut line) {
+                Ok(0) => {// EOF reached
+                    // print a new line and break
+                    println!();
+                    break;
+                }
+                Ok(_) => {
+                    // TODO: call the interpreter with the line
+                    unimplemented!();
+                }
+                Err(e) => {
+                    eprintln!("Error reading line: {}", e);
+                    continue;
+                }
+            }
+        }
+        
         return InterpretResult::Ok;
     }
 }
