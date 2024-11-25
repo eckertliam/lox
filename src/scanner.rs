@@ -135,7 +135,7 @@ impl<'src> Scanner<'src> {
         Token { token_type, lexeme, line: self.line }
     }
 
-    fn scan_token(&mut self) -> Token<'src> {
+    pub fn scan_token(&mut self) -> Token<'src> {
         self.skip_whitespace();
 
         self.start = self.current;
@@ -193,7 +193,8 @@ impl<'src> Scanner<'src> {
     }
 }
 
-enum TokenType {
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum TokenType {
     // Single-character tokens
     LeftParen,
     RightParen,
@@ -239,10 +240,19 @@ enum TokenType {
     // Special
     Error,
     Eof,
+    // Empty token
+    Empty,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Token<'src> {
-    token_type: TokenType,
-    lexeme: &'src str,
-    line: usize,
+    pub token_type: TokenType,
+    pub lexeme: &'src str,
+    pub line: usize,
+}
+
+impl<'src> Default for Token<'src> {
+    fn default() -> Self {
+        Self { token_type: TokenType::Empty, lexeme: "", line: 0 }
+    }
 }

@@ -1,4 +1,4 @@
-use std::io::{Read, Write};
+use std::io::Write;
 
 use crate::chunk::Chunk;
 use crate::compiler::compile;
@@ -42,21 +42,24 @@ impl Stack {
     }
 }
 
-pub struct VM<'a> {
-    chunk: Chunk<'a>,
+pub struct VM {
+    chunk: Chunk,
     ip: usize,
     stack: Stack,
 }
 
-impl<'a> VM<'a> {
-    pub fn new(chunk: Chunk<'a>) -> Self {
+impl VM {
+    pub fn new(chunk: Chunk) -> Self {
         Self { chunk, ip: 0, stack: Stack::new() }
     }
 
-    pub fn interpret(&mut self, source: &'a str) -> InterpretResult {
-        self.chunk = compile(source);
-        self.ip = 0;
-        return self.run();
+    pub fn interpret(&mut self, source: &str) -> InterpretResult {
+        let chunk = match compile(source) {
+            Ok(chunk) => chunk,
+            Err(_) => return InterpretResult::CompileError,
+        };
+        self.chunk = chunk;
+        self.run()
     }
 
     fn run(&mut self) -> InterpretResult {
@@ -96,7 +99,6 @@ impl<'a> VM<'a> {
                 }
             }
         }
-        return InterpretResult::Ok;
     }
 
     pub fn repl(&mut self) -> InterpretResult {
@@ -125,6 +127,12 @@ impl<'a> VM<'a> {
         }
         
         return InterpretResult::Ok;
+    }
+}
+
+impl Default for VM {
+    fn default() -> Self {
+        Self::new(Chunk::default())
     }
 }
 
