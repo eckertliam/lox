@@ -94,7 +94,7 @@ impl VM {
                 OpCode::Constant => {
                     let const_idx: u8 = self.chunk.code[self.ip];
                     self.ip += 1;
-                    let value: Value = self.chunk.get_const(const_idx);
+                    let value: Value = self.chunk.get_const(const_idx as usize);
                     self.stack.push(value);
                 }
             }

@@ -26,12 +26,12 @@ impl Chunk {
         self.write(opcode as u8, line);
     }
 
-    pub fn add_const(&mut self, value: Value) -> u8 {
+    pub fn add_const(&mut self, value: Value) -> usize {
         self.constants.write(value)
     }
 
-    pub fn get_const(&self, index: u8) -> Value {
-        self.constants.get(index as usize)
+    pub fn get_const(&self, index: usize) -> Value {
+        self.constants.get(index)
     }
 }
 
