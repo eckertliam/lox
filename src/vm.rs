@@ -10,7 +10,11 @@ macro_rules! binary_op {
         {
             let b: Value = $self.stack.pop();
             let a: Value = $self.stack.pop();
-            $self.stack.push(a $op b);
+            if let Ok(value) = a $op b {
+                $self.stack.push(value);
+            } else {
+                return InterpretResult::RuntimeError;
+            }
         }
     };
 }
@@ -24,7 +28,7 @@ struct Stack {
 
 impl Stack {
     fn new() -> Self {
-        Self { values: [0.0; STACK_MAX], top: 0 }
+        Self { values: [Value::Nil; STACK_MAX], top: 0 }
     }
 
     pub fn reset(&mut self) {
@@ -39,6 +43,10 @@ impl Stack {
     pub fn pop(&mut self) -> Value {
         self.top -= 1;
         self.values[self.top]
+    }
+
+    pub fn peek(&self, distance: usize) -> Value {
+        self.values[self.top - distance - 1]
     }
 }
 
@@ -75,7 +83,7 @@ impl VM {
                     print!("[ {} ]", self.stack.values[i]);
                 }
                 println!();
-                disassemble_instruction(self.chunk, self.ip);
+                disassemble_instruction(&self.chunk, self.ip);
             }
 
             match instruction {
@@ -83,13 +91,42 @@ impl VM {
                     println!("{}", self.stack.pop());
                     return InterpretResult::Ok;
                 }
+                OpCode::Nil => self.stack.push(Value::Nil),
+                OpCode::Not => {
+                    self.stack.values[self.stack.top - 1] = if let Ok(value) = !self.stack.values[self.stack.top - 1] {
+                        value
+                    } else {
+                        return InterpretResult::RuntimeError;
+                    };
+                }
+                OpCode::True => self.stack.push(Value::Bool(true)),
+                OpCode::False => self.stack.push(Value::Bool(false)),
                 OpCode::Add => binary_op!(self, +),
                 OpCode::Subtract => binary_op!(self, -),
                 OpCode::Multiply => binary_op!(self, *),
                 OpCode::Divide => binary_op!(self, /),
                 OpCode::Modulo => binary_op!(self, %),
+                OpCode::Equal => {
+                    let b: Value = self.stack.pop();
+                    let a: Value = self.stack.pop();
+                    self.stack.push(Value::Bool(a.equal(&b)));
+                }
+                OpCode::Greater => {
+                    let b: Value = self.stack.pop();
+                    let a: Value = self.stack.pop();
+                    self.stack.push(Value::Bool(a.greater(&b)));
+                }
+                OpCode::Less => {
+                    let b: Value = self.stack.pop();
+                    let a: Value = self.stack.pop();
+                    self.stack.push(Value::Bool(a.less(&b)));
+                }
                 OpCode::Negate => {
-                    self.stack.values[self.stack.top - 1] = -self.stack.values[self.stack.top - 1];
+                    self.stack.values[self.stack.top - 1] = if let Ok(value) = -self.stack.values[self.stack.top - 1] {
+                        value
+                    } else {
+                        return InterpretResult::RuntimeError;
+                    };
                 }
                 OpCode::Constant => {
                     let const_idx: u8 = self.chunk.code[self.ip];
@@ -99,34 +136,6 @@ impl VM {
                 }
             }
         }
-    }
-
-    pub fn repl(&mut self) -> InterpretResult {
-        let mut line = String::new();
-        
-        loop {
-            print!("> ");
-            std::io::stdout().flush().unwrap();
-            line.clear();
-            
-            match std::io::stdin().read_line(&mut line) {
-                Ok(0) => {// EOF reached
-                    // print a new line and break
-                    println!();
-                    break;
-                }
-                Ok(_) => {
-                    // TODO: call the interpreter with the line
-                    unimplemented!();
-                }
-                Err(e) => {
-                    eprintln!("Error reading line: {}", e);
-                    continue;
-                }
-            }
-        }
-        
-        return InterpretResult::Ok;
     }
 }
 

@@ -1,6 +1,6 @@
 use std::{env, io::Write};
 
-use vm::{InterpretResult, VM};
+use vm::VM;
 
 mod opcode;
 mod chunk;

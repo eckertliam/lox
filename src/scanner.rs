@@ -256,3 +256,28 @@ impl<'src> Default for Token<'src> {
         Self { token_type: TokenType::Empty, lexeme: "", line: 0 }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    macro_rules! assert_token {
+        ($tokens:expr, $index:expr, $token_type:expr) => {
+            assert_eq!($tokens[$index].token_type, $token_type);
+        };
+    }
+
+    #[test]
+    fn test_binary_operations() {
+        let src = "1.567 * 20";
+        let mut scanner = Scanner::new(src);
+        let mut tokens = Vec::new();
+        while !scanner.is_at_end() {
+            tokens.push(scanner.scan_token());
+        }
+        assert_eq!(tokens.len(), 3);
+        assert_token!(tokens, 0, TokenType::Number);
+        assert_token!(tokens, 1, TokenType::Star);
+        assert_token!(tokens, 2, TokenType::Number);
+    }
+}

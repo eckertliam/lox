@@ -22,7 +22,7 @@ macro_rules! constant_instruction {
     ($name:tt, $offset:expr, $chunk:expr) => {
         {
             let const_idx: u8 = $chunk.code[$offset + 1];
-            let value: Value = $chunk.get_const(const_idx);
+            let value: Value = $chunk.get_const(const_idx as usize);
             println!("{}    {} {}", stringify!($name), const_idx, value);
             $offset + 2
         }
@@ -38,16 +38,9 @@ pub fn disassemble_instruction(chunk: &Chunk, offset: usize) -> usize {
         print!("{:4} ", chunk.lines[offset]);
     }
 
-    let byte = chunk.code[offset];
-    
-    let instr = if let Ok(instr) = OpCode::try_from(byte) {
-        instr
-    } else {
-        eprintln!("Invalid opcode: {}", byte);
-        return offset + 1;
-    };
+    let opcode = OpCode::from(chunk.code[offset]);
 
-    match instr {
+    match opcode {
         OpCode::Constant => constant_instruction!(CONSTANT, offset, chunk),
         OpCode::Return => simple_instruction!(RETURN, offset),
         OpCode::Negate => simple_instruction!(NEGATE, offset),
@@ -56,5 +49,12 @@ pub fn disassemble_instruction(chunk: &Chunk, offset: usize) -> usize {
         OpCode::Multiply => simple_instruction!(MULTIPLY, offset),
         OpCode::Divide => simple_instruction!(DIVIDE, offset),
         OpCode::Modulo => simple_instruction!(MODULO, offset),
+        OpCode::Nil => simple_instruction!(NIL, offset),
+        OpCode::True => simple_instruction!(TRUE, offset),
+        OpCode::False => simple_instruction!(FALSE, offset),
+        OpCode::Not => simple_instruction!(NOT, offset),
+        OpCode::Equal => simple_instruction!(EQUAL, offset),
+        OpCode::Greater => simple_instruction!(GREATER, offset),
+        OpCode::Less => simple_instruction!(LESS, offset),
     }
 }

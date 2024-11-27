@@ -1,5 +1,6 @@
 use crate::{opcode::OpCode, value::{Value, ValueArray}};
 
+#[derive(Debug)]
 pub struct Chunk {
     pub name: String,
     pub code: Vec<u8>,
