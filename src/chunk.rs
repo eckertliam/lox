@@ -1,11 +1,11 @@
-use crate::{opcode::OpCode, value::{Value, ValueArray}};
+use crate::{opcode::OpCode, value::Value};
 
 #[derive(Debug)]
 pub struct Chunk {
     pub name: String,
     pub code: Vec<u8>,
     pub lines: Vec<usize>,
-    pub constants: ValueArray,
+    pub constants: Vec<Value>,
 }
 
 impl Chunk {
@@ -14,7 +14,7 @@ impl Chunk {
             name: name.to_string(), 
             code: Vec::new(), 
             lines: Vec::new(), 
-            constants: ValueArray::new() 
+            constants: Vec::new() 
         }
     }
 
@@ -28,11 +28,12 @@ impl Chunk {
     }
 
     pub fn add_const(&mut self, value: Value) -> usize {
-        self.constants.write(value)
+        self.constants.push(value);
+        self.constants.len() - 1
     }
 
     pub fn get_const(&self, index: usize) -> Value {
-        self.constants.get(index)
+        self.constants[index]
     }
 }
 
