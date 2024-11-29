@@ -28,7 +28,8 @@ struct Stack {
 
 impl Stack {
     fn new() -> Self {
-        Self { values: [Value::Nil; STACK_MAX], top: 0 }
+        const NIL: Value = Value::Nil;
+        Self { values: [NIL; STACK_MAX], top: 0 }
     }
 
     pub fn reset(&mut self) {

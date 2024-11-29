@@ -1,11 +1,15 @@
 use std::fmt::Display;
 
+use crate::gc::GcRef;
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Value {
+    String(GcRef<String>),
     Number(f64),
     Bool(bool),
     Nil,
 }
+
 
 impl Value {
     pub fn equal(&self, rhs: &Self) -> bool {

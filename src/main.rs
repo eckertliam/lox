@@ -10,7 +10,8 @@ mod value;
 mod vm;
 mod compiler;
 mod scanner;
-
+mod object;
+mod gc;
 const VERSION: &str = "0.0.1";
 
 fn repl() {
