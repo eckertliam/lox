@@ -1,23 +1,7 @@
-use std::io::Write;
-
 use crate::chunk::Chunk;
 use crate::compiler::compile;
 use crate::opcode::OpCode;
 use crate::value::Value;
-
-macro_rules! binary_op {
-    ($self:expr, $op:tt) => {
-        {
-            let b: Value = $self.stack.pop();
-            let a: Value = $self.stack.pop();
-            if let Ok(value) = a $op b {
-                $self.stack.push(value);
-            } else {
-                return InterpretResult::RuntimeError;
-            }
-        }
-    };
-}
 
 const STACK_MAX: usize = 256;
 
@@ -43,11 +27,11 @@ impl Stack {
 
     pub fn pop(&mut self) -> Value {
         self.top -= 1;
-        self.values[self.top]
+        std::mem::replace(&mut self.values[self.top], Value::Nil)
     }
 
-    pub fn peek(&self, distance: usize) -> Value {
-        self.values[self.top - distance - 1]
+    pub fn peek(&self, distance: usize) -> &Value {
+        &self.values[self.top - distance - 1]
     }
 }
 
@@ -59,7 +43,11 @@ pub struct VM {
 
 impl VM {
     pub fn new(chunk: Chunk) -> Self {
-        Self { chunk, ip: 0, stack: Stack::new() }
+        Self { 
+            chunk, 
+            ip: 0, 
+            stack: Stack::new(),
+        }
     }
 
     pub fn interpret(&mut self, source: &str) -> InterpretResult {
@@ -94,40 +82,96 @@ impl VM {
                 }
                 OpCode::Nil => self.stack.push(Value::Nil),
                 OpCode::Not => {
-                    self.stack.values[self.stack.top - 1] = if let Ok(value) = !self.stack.values[self.stack.top - 1] {
-                        value
-                    } else {
-                        return InterpretResult::RuntimeError;
-                    };
+                    let value: Value = self.stack.pop();
+                    match value.not() {
+                        Ok(value) => self.stack.push(value),
+                        Err(msg) => {
+                            eprintln!("{}", msg);
+                            return InterpretResult::RuntimeError;
+                        }
+                    }
                 }
                 OpCode::True => self.stack.push(Value::Bool(true)),
                 OpCode::False => self.stack.push(Value::Bool(false)),
-                OpCode::Add => binary_op!(self, +),
-                OpCode::Subtract => binary_op!(self, -),
-                OpCode::Multiply => binary_op!(self, *),
-                OpCode::Divide => binary_op!(self, /),
-                OpCode::Modulo => binary_op!(self, %),
+                OpCode::Add => {
+                    let b: Value = self.stack.pop();
+                    let a: Value = self.stack.pop();
+                    match a.add(&b) {
+                        Ok(value) => self.stack.push(value),
+                        Err(msg) => {
+                            eprintln!("{}", msg);
+                            return InterpretResult::RuntimeError;
+                        }
+                    }
+                }
+                OpCode::Subtract => {
+                    let b: Value = self.stack.pop();
+                    let a: Value = self.stack.pop();
+                    match a.subtract(&b) {
+                        Ok(value) => self.stack.push(value),
+                        Err(msg) => {
+                            eprintln!("{}", msg);
+                            return InterpretResult::RuntimeError;
+                        }
+                    }
+                }
+                OpCode::Multiply => {
+                    let b: Value = self.stack.pop();
+                    let a: Value = self.stack.pop();
+                    match a.multiply(&b) {
+                        Ok(value) => self.stack.push(value),
+                        Err(msg) => {
+                            eprintln!("{}", msg);
+                            return InterpretResult::RuntimeError;
+                        }
+                    }
+                }
+                OpCode::Divide => {
+                    let b: Value = self.stack.pop();
+                    let a: Value = self.stack.pop();
+                    match a.divide(&b) {
+                        Ok(value) => self.stack.push(value),
+                        Err(msg) => {
+                            eprintln!("{}", msg);
+                            return InterpretResult::RuntimeError;
+                        }
+                    }
+                }
+                OpCode::Modulo => {
+                    let b: Value = self.stack.pop();
+                    let a: Value = self.stack.pop();
+                    match a.modulo(&b) {
+                        Ok(value) => self.stack.push(value),
+                        Err(msg) => {
+                            eprintln!("{}", msg);
+                            return InterpretResult::RuntimeError;
+                        }
+                    }
+                }
                 OpCode::Equal => {
                     let b: Value = self.stack.pop();
                     let a: Value = self.stack.pop();
-                    self.stack.push(Value::Bool(a.equal(&b)));
+                    self.stack.push(a.equal(&b));
                 }
                 OpCode::Greater => {
                     let b: Value = self.stack.pop();
                     let a: Value = self.stack.pop();
-                    self.stack.push(Value::Bool(a.greater(&b)));
+                    self.stack.push(a.greater(&b));
                 }
                 OpCode::Less => {
                     let b: Value = self.stack.pop();
                     let a: Value = self.stack.pop();
-                    self.stack.push(Value::Bool(a.less(&b)));
+                    self.stack.push(a.less(&b));
                 }
                 OpCode::Negate => {
-                    self.stack.values[self.stack.top - 1] = if let Ok(value) = -self.stack.values[self.stack.top - 1] {
-                        value
-                    } else {
-                        return InterpretResult::RuntimeError;
-                    };
+                    let value: Value = self.stack.pop();
+                    match value.negate() {
+                        Ok(value) => self.stack.push(value),
+                        Err(msg) => {
+                            eprintln!("{}", msg);
+                            return InterpretResult::RuntimeError;
+                        }
+                    }
                 }
                 OpCode::Constant => {
                     let const_idx: u8 = self.chunk.code[self.ip];

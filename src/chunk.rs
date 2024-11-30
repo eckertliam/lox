@@ -33,7 +33,7 @@ impl Chunk {
     }
 
     pub fn get_const(&self, index: usize) -> Value {
-        self.constants[index]
+        self.constants[index].clone()
     }
 }
 

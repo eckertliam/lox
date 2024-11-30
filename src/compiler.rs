@@ -112,6 +112,11 @@ fn number<'src>(parser: &mut Parser<'src>) {
     emit_constant(parser, value);
 }
 
+fn string<'src>(parser: &mut Parser<'src>) {
+    let trimmed: String = parser.previous.lexeme.trim_matches('"').to_string();
+    emit_constant(parser, Value::String(trimmed));
+}
+
 fn grouping<'src>(parser: &mut Parser<'src>) {
     expression(parser);
     consume(parser, TokenType::RightParen, "Expect ')' after expression");
@@ -353,7 +358,7 @@ fn get_rule(token_type: TokenType) -> ParseRule {
             precedence: Precedence::None,
         },
         TokenType::String => ParseRule {
-            prefix: None,
+            prefix: Some(string),
             infix: None,
             precedence: Precedence::None,
         },
@@ -459,6 +464,17 @@ fn get_rule(token_type: TokenType) -> ParseRule {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_string() {
+        let src = "\"hello\"";
+        let result = compile(src);
+        assert!(result.is_ok());
+        let chunk = result.unwrap();
+        assert_eq!(chunk.constants.len(), 1);
+        assert_eq!(chunk.code.len(), 3);
+        assert_eq!(chunk.get_const(0), Value::String("hello".to_string()));
+    }
 
     #[test]
     fn test_parser_state_binary_operations() {

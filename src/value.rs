@@ -1,62 +1,17 @@
 use std::fmt::Display;
 
-use crate::gc::GcRef;
-
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Value {
-    String(GcRef<String>),
+    String(String),
     Number(f64),
     Bool(bool),
     Nil,
 }
 
-
-impl Value {
-    pub fn equal(&self, rhs: &Self) -> bool {
-        match (self, rhs) {
-            (Self::Number(n), Self::Number(m)) => n == m,
-            (Self::Bool(b), Self::Bool(c)) => b == c,
-            (Self::Nil, Self::Nil) => true,
-            _ => false,
-        }
-    }
-
-    pub fn greater(&self, rhs: &Self) -> bool {
-        match (self, rhs) {
-            (Self::Number(n), Self::Number(m)) => n > m,
-            _ => false,
-        }
-    }
-
-    pub fn less(&self, rhs: &Self) -> bool {
-        match (self, rhs) {
-            (Self::Number(n), Self::Number(m)) => n < m,
-            _ => false,
-        }
-    }
-}
-
-macro_rules! unary_error {
-    ($op:expr, $value:expr) => {
-        {
-            eprintln!("Runtime error: Cannot perform {} on {}", $op, $value);
-            return Err(());
-        }
-    };
-}
-
-macro_rules! binary_error {
-    ($op:expr, $lhs:expr, $rhs:expr) => {
-        {
-            eprintln!("Runtime error: Cannot perform {} on {} and {}", $op, $lhs, $rhs);
-            return Err(());
-        }
-    };
-}
-
 impl Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::String(s) => write!(f, "{}", s),
             Self::Number(n) => write!(f, "{}", n),
             Self::Bool(b) => write!(f, "{}", b),
             Self::Nil => write!(f, "nil"),
@@ -64,80 +19,84 @@ impl Display for Value {
     }
 }
 
-impl std::ops::Neg for Value {
-    type Output = Result<Self, ()>;
-
-    fn neg(self) -> Self::Output {
+impl Value {
+    pub fn is_truthy(&self) -> bool {
         match self {
-            Self::Number(n) => Ok(Self::Number(-n)),
-            Self::Bool(_) => unary_error!("-", &self),
-            Self::Nil => unary_error!("-", &self),
+            Value::Bool(b) => *b,
+            Value::Nil => false,
+            _ => true,
         }
     }
-}
 
-impl std::ops::Not for Value {
-    type Output = Result<Self, ()>;
-
-    fn not(self) -> Self::Output {
+    pub fn not(&self) -> Result<Value, String> {
         match self {
-            Self::Bool(b) => Ok(Self::Bool(!b)),
-            _ => unary_error!("!", &self),
+            Value::Bool(b) => Ok(Value::Bool(!b)),
+            _ => Err(format!("Cannot negate {}", self)),
         }
     }
-}
 
-impl std::ops::Add for Value {
-    type Output = Result<Self, ()>;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        match (self, rhs) {
-            (Self::Number(n), Self::Number(m)) => Ok(Self::Number(n + m)),
-            _ => binary_error!("+", &self, &rhs),
+    pub fn negate(&self) -> Result<Value, String> {
+        match self {
+            Value::Number(n) => Ok(Value::Number(-n)),
+            _ => Err(format!("Cannot negate {}", self)),
         }
     }
-}
 
-impl std::ops::Sub for Value {
-    type Output = Result<Self, ()>;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        match (self, rhs) {
-            (Self::Number(n), Self::Number(m)) => Ok(Self::Number(n - m)),
-            _ => binary_error!("-", &self, &rhs),
+    pub fn add(&self, other: &Value) -> Result<Value, String> {
+        match (self, other) {
+            (Value::Number(n), Value::Number(m)) => Ok(Value::Number(n + m)),
+            (Value::String(s), Value::String(t)) => Ok(Value::String(s.clone() + &t)),
+            _ => Err(format!("Cannot add {} and {}", self, other)),
         }
     }
-}
 
-impl std::ops::Mul for Value {
-    type Output = Result<Self, ()>;
-
-    fn mul(self, rhs: Self) -> Self::Output {
-        match (self, rhs) {
-            (Self::Number(n), Self::Number(m)) => Ok(Self::Number(n * m)),
-            _ => binary_error!("*", &self, &rhs),
+    pub fn subtract(&self, other: &Value) -> Result<Value, String> {
+        match (self, other) {
+            (Value::Number(n), Value::Number(m)) => Ok(Value::Number(n - m)),
+            _ => Err(format!("Cannot subtract {} and {}", self, other)),
         }
     }
-}
 
-impl std::ops::Div for Value {
-    type Output = Result<Self, ()>;
-
-    fn div(self, rhs: Self) -> Self::Output {
-        match (self, rhs) {
-            (Self::Number(n), Self::Number(m)) => Ok(Self::Number(n / m)),
-            _ => binary_error!("/", &self, &rhs),
+    pub fn multiply(&self, other: &Value) -> Result<Value, String> {
+        match (self, other) {
+            (Value::Number(n), Value::Number(m)) => Ok(Value::Number(n * m)),
+            _ => Err(format!("Cannot multiply {} and {}", self, other)),
         }
     }
-}
 
-impl std::ops::Rem for Value {
-    type Output = Result<Self, ()>;
+    pub fn divide(&self, other: &Value) -> Result<Value, String> {
+        match (self, other) {
+            (Value::Number(n), Value::Number(m)) => Ok(Value::Number(n / m)),
+            _ => Err(format!("Cannot divide {} and {}", self, other)),
+        }
+    }
 
-    fn rem(self, rhs: Self) -> Self::Output {
-        match (self, rhs) {
-            (Self::Number(n), Self::Number(m)) => Ok(Self::Number(n % m)),
-            _ => binary_error!("%", &self, &rhs),
+    pub fn modulo(&self, other: &Value) -> Result<Value, String> {
+        match (self, other) {
+            (Value::Number(n), Value::Number(m)) => Ok(Value::Number(n % m)),
+            _ => Err(format!("Cannot modulo {} and {}", self, other)),
+        }
+    }
+
+    pub fn equal(&self, other: &Value) -> Value {
+        Value::Bool(self == other)
+    }
+
+    pub fn not_equal(&self, other: &Value) -> Value {
+        Value::Bool(self != other)
+    }
+
+    pub fn greater(&self, other: &Value) -> Value {
+        match (self, other) {
+            (Value::Number(n), Value::Number(m)) => Value::Bool(n > m),
+            _ => Value::Bool(false),
+        }
+    }
+
+    pub fn less(&self, other: &Value) -> Value {
+        match (self, other) {
+            (Value::Number(n), Value::Number(m)) => Value::Bool(n < m),
+            _ => Value::Bool(false),
         }
     }
 }
